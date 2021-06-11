@@ -1,0 +1,53 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: puppeteer-crawler
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: puppeteer-crawler
+        category: data-access
+    spec:
+      imagePullSecrets:
+        - name: registry-cred
+      containers:
+      - name: puppeteer-crawler-instance
+        image: registry.x-native.org/puppeteer-crawler:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: service
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: puppeteer-crawler-service
+spec:
+  type: ClusterIP
+  ports:
+  - name: service
+    port: 80
+    protocol: TCP 
+    targetPort: 5000
+  selector:
+    app: puppeteer-crawler
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: puppeteer-crawler
+  labels:
+    app: puppeteer-crawler
+spec:
+  rules:
+  - host: crawl.x-native.org
+    http:
+      paths:
+      - backend:
+          serviceName: puppeteer-crawler-service
+          servicePort: 80
+        path: /api/v1/puppeteer-crawler
